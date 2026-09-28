@@ -1,0 +1,14 @@
+{
+  "name": "stress-buster",
+  "version": "1.0.0",
+  "description": "오피스 스트레스 버스터 - 하이퍼 캐주얼 액션 웹 앱",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

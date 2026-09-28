@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>김부장 | 오피스 스트레스 버스터</title>
+  <meta name="description" content="김부장을 향한 통쾌한 복수! 오늘의 스트레스 지수에 따라 주어지는 무기로 시원하게 스트레스를 날려버리세요.">
+  <link rel="stylesheet" href="./src/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="game-container">
+    <!-- 배경 오피스 분위기 요소 -->
+    <div class="office-bg">
+      <div class="window-view"></div>
+      <div class="whiteboard">
+        <span class="wb-title">📌 오늘의 타겟: <span id="wbTargetName">김부장</span></span>
+        <span class="wb-item" id="officeClock">🕒 18:00 (칼퇴!)</span>
+        <span class="wb-item">❌ 주말 출근 강요 금지</span>
+        <span class="wb-item">🔥 보고서 무한 반려 금지</span>
+        <span class="wb-item">☕ 라떼 토크 금지</span>
+      </div>
+      <div class="desk"></div>
+    </div>
+
+    <!-- 메인 캔버스 (래그돌 물리, 투척체, 파티클, 슬링샷 궤적) -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 상단 HUD (좌: 김부장 마크, 중: 스트레스 원인 / 점수 / FEVER, 우: 소리 / 스트레스 설정) -->
+    <header class="game-hud">
+      <!-- 화면 제일 왼쪽: 김부장 마크 -->
+      <div class="hud-left">
+        <div class="brand-title" id="targetBrandTitle">김부장</div>
+      </div>
+
+      <!-- 화면 정가운데: 스트레스 주요 원인 & 그 밑에 점수와 fever 0% -->
+      <div class="hud-center">
+        <!-- 윗줄: 스트레스 주요 원인 -->
+        <button type="button" id="hudStressReason" class="hud-reason-badge" title="오늘의 스트레스 주원인 (클릭하여 변경)">
+          <span class="reason-icon">💢</span>
+          <span id="hudReasonText" class="reason-text">야근 강요</span>
+        </button>
+
+        <!-- 아랫줄: 점수 & FEVER 게이지 바 -->
+        <div class="hud-center-metrics">
+          <div class="stat-pill score-pill">
+            <span class="flame-icon">💥</span>
+            <span id="stressRelieved">0</span><span class="pt-unit">pt</span>
+          </div>
+
+          <div class="fever-gauge-box" id="feverBox">
+            <div class="fever-bar" id="feverBar"></div>
+            <span class="fever-text" id="feverText">⚡ FEVER 0%</span>
+          </div>
+
+          <!-- 콤보 표시기 -->
+          <div class="combo-container" id="comboContainer">
+            <span class="combo-number" id="comboNumber">0</span>
+            <span class="combo-label">COMBO!</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 화면 제일 오른쪽: 소리 및 스트레스 점수 설정 -->
+      <div class="hud-right">
+        <button id="soundToggleBtn" class="hud-btn" title="사운드 온/오프">🔊</button>
+        <button id="stressMeterBtn" class="hud-btn highlight-btn stress-btn" title="스트레스 지수 측정">
+          <span class="btn-emoji">🔥</span>
+          <span id="currentStressBadge" class="stress-badge-num">8점</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 중앙 타겟 안내 / 슬링샷 가이드 힌트 -->
+    <div class="action-hint" id="actionHint">
+      👆 화면을 뒤로 당겨 <span class="highlight">파워 딱밤</span>을 날리거나 무기를 투척하세요!
+    </div>
+
+    <!-- 하단 퀵 메뉴 및 무기 덱 -->
+    <footer class="game-footer">
+      <div class="menu-bar">
+        <button id="openAvatarBtn" class="menu-btn">
+          <span class="btn-icon">👔</span>
+          <span class="btn-text">아바타 룸</span>
+        </button>
+        <button id="openProofBtn" class="menu-btn accent-menu-btn">
+          <span class="btn-icon">🏆</span>
+          <span class="btn-text">참교육 인증서</span>
+        </button>
+      </div>
+
+      <!-- 무기 슬롯 덱 (스트레스 점수에 따라 동적 해금) -->
+      <div class="weapon-deck" id="weaponDeck">
+        <!-- JS로 동적 생성 -->
+      </div>
+    </footer>
+
+    <!-- 피버 타임 오버레이 연출 -->
+    <div class="fever-overlay" id="feverOverlay">
+      <div class="fever-title">🔥 FEVER TIME! 무한 난타 🔥</div>
+    </div>
+
+    <!-- 1. 아바타 커스터마이징 모달 -->
+    <div class="modal-backdrop" id="avatarModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>👔 타겟 아바타 커스터마이징</h2>
+          <button class="close-btn" data-close="avatarModal">✕</button>
+        </div>
+        <div class="modal-body avatar-studio-wrap">
+          <!-- 남성 / 여성 프리셋 탭 -->
+          <div class="gender-presets-bar">
+            <button type="button" class="gender-preset-btn active" id="presetMaleBtn" data-gender="male">
+              👨 꼰대 김부장 (남성)
+            </button>
+            <button type="button" class="gender-preset-btn" id="presetFemaleBtn" data-gender="female">
+              👩 히스테릭 박부장 (여성)
+            </button>
+          </div>
+
+          <div class="avatar-studio">
+            <div class="avatar-preview-box">
+              <canvas id="avatarPreviewCanvas" width="200" height="240"></canvas>
+              <div class="target-name-tag">
+                <input type="text" id="avatarNameInput" value="김부장" placeholder="대상 이름" maxlength="8">
+                <input type="text" id="avatarRoleInput" value="개발팀 부장" placeholder="직급/역할" maxlength="10">
+              </div>
+            </div>
+            <div class="parts-customizer">
+              <div class="parts-tab-nav" id="partsTabNav">
+                <button class="part-tab-btn active" data-tab="hair">헤어</button>
+                <button class="part-tab-btn" data-tab="face_exp">표정</button>
+                <button class="part-tab-btn" data-tab="glasses">안경</button>
+                <button class="part-tab-btn" data-tab="accessory">악세사리</button>
+                <button class="part-tab-btn" data-tab="outfit">의상</button>
+              </div>
+              <div class="parts-options-list" id="partsOptionsList">
+                <!-- JS 동적 생성 -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="action-btn primary" id="saveAvatarBtn">✨ 타겟 아바타 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 스트레스 지수 측정 & 무기 지급 모달 -->
+    <div class="modal-backdrop" id="stressMeterModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>🔥 오늘의 스트레스 진단 & 기록</h2>
+          <button class="close-btn" data-close="stressMeterModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="stress-checkin-section">
+            <p class="section-desc">오늘 김부장 때문에 받은 스트레스 지수와 주원인을 기록하세요.<br><strong>모든 무기는 제한 없이 자유롭게 마음껏 사용할 수 있습니다!</strong></p>
+            
+            <div class="stress-slider-box">
+              <div class="stress-score-display">
+                <span id="stressScoreVal">8</span>점
+                <span class="stress-emoji" id="stressEmoji">🤬</span>
+              </div>
+              <input type="range" id="stressInput" min="1" max="10" value="8" class="stress-slider">
+              <div class="slider-labels">
+                <span>1~3점 (주의)</span>
+                <span>4~6점 (분노)</span>
+                <span>7~10점 (극대노)</span>
+              </div>
+            </div>
+
+            <!-- 스트레스 주요 원인 선택 및 직접 등록 -->
+            <div class="stress-reasons">
+              <div class="reason-header-row">
+                <label class="reason-label">오늘 스트레스 주원인:</label>
+                <span class="reason-sub-hint">원인 선택 및 직접 추가</span>
+              </div>
+              <div class="reason-tags" id="reasonTags">
+                <!-- JS로 동적 생성 -->
+              </div>
+              <div class="reason-add-form">
+                <input type="text" id="customReasonInput" class="custom-reason-input" placeholder="원인 직접 등록 (예: 주말 카톡, 기습 회식)" maxlength="16">
+                <button type="button" id="addReasonBtn" class="add-reason-btn">➕ 등록</button>
+              </div>
+            </div>
+
+            <button class="action-btn highlight-gold" id="applyStressBtn">
+              ⚔️ 스트레스 기록하고 스트레스 날리기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 참교육 완료 짤방/인증서 모달 -->
+    <div class="modal-backdrop" id="proofModal">
+      <div class="modal-card proof-card-modal">
+        <div class="modal-header">
+          <h2>🏆 김부장 참교육 인증서</h2>
+          <button class="close-btn" data-close="proofModal">✕</button>
+        </div>
+        <div class="modal-body proof-body">
+          <div class="proof-canvas-container" id="proofCanvasContainer"></div>
+          <div class="proof-actions">
+            <button class="action-btn download-btn" id="downloadCardBtn">📥 인증서 이미지 저장</button>
+            <button class="action-btn share-btn" id="shareCardBtn">🚀 인스타그램 / SNS 공유</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

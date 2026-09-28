@@ -1,0 +1,1025 @@
+:root {
+  --bg-dark: #0B0F19;
+  --bg-card: rgba(30, 41, 59, 0.75);
+  --border-glow: rgba(245, 158, 11, 0.3);
+  --primary: #F59E0B;
+  --primary-hover: #D97706;
+  --accent-red: #EF4444;
+  --accent-cyan: #06B6D4;
+  --accent-green: #10B981;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  font-family: var(--font-family);
+  color: var(--text-main);
+}
+
+.game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 오피스 배경 연출 */
+.office-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 30%, #1E293B 0%, #0F172A 70%, #090D16 100%);
+  z-index: 1;
+}
+
+.window-view {
+  position: absolute;
+  top: 35px;
+  right: 40px;
+  width: 140px;
+  height: 120px;
+  border: 3px solid #334155;
+  background: linear-gradient(180deg, #020617 0%, #1e1b4b 100%);
+  border-radius: 8px;
+  box-shadow: 0 0 25px rgba(30, 27, 75, 0.5);
+  opacity: 0.5;
+}
+.window-view::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #334155;
+  box-shadow: 0 0 8px #38BDF8;
+}
+
+.whiteboard {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  width: 150px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  opacity: 0.5;
+}
+.wb-title {
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.wb-item {
+  color: #CBD5E1;
+}
+
+.desk {
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  border-top: 2px solid #334155;
+  opacity: 0.35;
+}
+
+/* 메인 인터랙티브 캔버스 (모바일 터치 스크롤 방지) */
+#gameCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* 상단 HUD (좌: 김부장 마크 제일 왼쪽, 중: 스트레스 원인 / 점수 fever 0% 정가운데, 우: 소리 / 스트레스 설정 제일 오른쪽) */
+.game-hud {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 2px 16px;
+  pointer-events: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hud-left {
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #FFD54F;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 18px;
+  box-sizing: border-box;
+}
+.stat-pill .pt-unit {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  margin-left: 1px;
+}
+
+.score-pill {
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* 정가운데: 스트레스 주요 원인 & 바로 밑에 점수 및 fever 게이지 */
+.hud-center {
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  position: relative;
+}
+
+.hud-reason-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  color: #FECDD3;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.hud-reason-badge:hover {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+.reason-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.reason-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 아랫줄: 점수 pill & fever bar 나란히 배치 */
+.hud-center-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+}
+
+.fever-gauge-box {
+  position: relative;
+  width: 95px;
+  height: 18px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.fever-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #F59E0B, #EF4444);
+  transition: width 0.15s ease;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+}
+.fever-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  color: #FFF;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.2px;
+}
+
+.combo-container {
+  position: absolute;
+  top: -15px;
+  right: -10px;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  opacity: 0;
+  transform: scale(0.75);
+  transition: all 0.15s ease-out;
+  pointer-events: none;
+  z-index: 5;
+}
+.combo-container.active {
+  opacity: 1;
+  transform: scale(1.05);
+}
+.combo-number {
+  font-size: 16px;
+  font-weight: 900;
+  color: #F59E0B;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+}
+.combo-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #EF4444;
+}
+
+/* 우측 상단 고정: 소리 & 스트레스 점수 설정 제일 오른쪽 */
+.hud-right {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.hud-btn {
+  position: relative;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.8);
+  color: #FFF;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  padding: 0 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+.hud-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+.hud-btn:active {
+  transform: scale(0.95);
+}
+
+.stress-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(245, 158, 11, 0.4));
+  border-color: #EF4444;
+  gap: 4px;
+}
+.stress-badge-num {
+  font-size: 12px;
+  font-weight: 900;
+  color: #FFEB3B;
+}
+
+/* 힌트 배너 */
+.action-hint {
+  position: relative;
+  align-self: center;
+  margin: 3px auto 0 auto;
+  padding: 5px 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 10;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.action-hint .highlight {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+/* 하단 무기 덱 & 메뉴 바 */
+.game-footer {
+  margin-top: auto;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px calc(14px + env(safe-area-inset-bottom, 0px)) 12px;
+  background: linear-gradient(0deg, rgba(11, 15, 25, 0.96) 0%, rgba(11, 15, 25, 0.7) 70%, transparent 100%);
+  pointer-events: auto;
+}
+
+.menu-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+.menu-btn:hover {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: var(--primary);
+}
+.accent-menu-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(245, 158, 11, 0.3));
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #FCD34D;
+}
+
+/* 무기 슬롯 덱 (상단 잘림 방지를 위해 넉넉한 패딩 적용) */
+.weapon-deck {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 12px 14px 6px 14px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.weapon-deck::-webkit-scrollbar {
+  display: none;
+}
+
+.weapon-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: 70px;
+  height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-sizing: border-box;
+}
+.weapon-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 158, 11, 0.6);
+}
+.weapon-card.active {
+  border-color: var(--primary);
+  background: rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.55), inset 0 0 10px rgba(245, 158, 11, 0.2);
+  transform: translateY(-2px);
+}
+.weapon-card.locked {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+
+.w-icon {
+  font-size: 26px;
+}
+.w-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+  line-height: 1.1;
+}
+.w-lock-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 11px;
+}
+
+/* 피버 모드 오버레이 */
+.fever-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 8;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fever-overlay.active {
+  opacity: 1;
+  animation: feverPulse 0.5s infinite alternate;
+}
+@keyframes feverPulse {
+  0% { background: rgba(239, 68, 68, 0.15); }
+  100% { background: rgba(245, 158, 11, 0.2); }
+}
+.fever-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #FFEB3B;
+  text-shadow: 0 0 25px #EF4444, 0 0 50px #F59E0B;
+  transform: rotate(-3deg);
+  text-align: center;
+}
+
+/* 모달 공통 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 14px;
+}
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 500px;
+  max-height: 88vh;
+  max-height: 88dvh;
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.section-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 13px 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.action-btn.primary {
+  background: var(--primary);
+  color: #000;
+}
+.action-btn.highlight-gold {
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  color: #FFF;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+
+/* 스트레스 진단 섹션 레이아웃 */
+.stress-checkin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 스트레스 슬라이더 박스 */
+.stress-slider-box {
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stress-score-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 28px;
+  font-weight: 900;
+  color: #EF4444;
+}
+.stress-emoji {
+  font-size: 32px;
+}
+.stress-slider {
+  width: 100%;
+  accent-color: #EF4444;
+  height: 6px;
+  cursor: pointer;
+}
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* 스트레스 주요 원인 태그 및 직접 등록 폼 */
+.stress-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+.reason-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.reason-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.reason-sub-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 115px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.reason-tag:hover {
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+.reason-tag.active {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #EF4444;
+  color: #FCA5A5;
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+.reason-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+  line-height: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFF;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin-left: 2px;
+}
+.reason-tag-remove:hover {
+  background: #EF4444;
+  color: #FFF;
+}
+.reason-add-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px;
+}
+.custom-reason-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #FFF;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.custom-reason-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+.custom-reason-input::placeholder {
+  color: #64748B;
+  font-size: 11.5px;
+}
+.add-reason-btn {
+  padding: 8px 14px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 10px;
+  color: #FCD34D;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.add-reason-btn:hover {
+  background: var(--primary);
+  color: #000;
+}
+
+/* 아바타 스튜디오 */
+.avatar-studio-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gender-presets-bar {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.gender-preset-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.gender-preset-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.gender-preset-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+.avatar-studio {
+  display: flex;
+  gap: 16px;
+  flex-direction: row;
+}
+@media (max-width: 520px) {
+  .avatar-studio {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+.avatar-preview-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+#avatarPreviewCanvas {
+  background: #0F172A;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+.target-name-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+.target-name-tag input {
+  width: 100%;
+  padding: 7px 10px;
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #FFF;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.parts-customizer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.parts-tab-nav {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.part-tab-btn {
+  padding: 5px 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.part-tab-btn.active {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+}
+
+.parts-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.part-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+}
+.part-option-item.selected {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* 인증서 짤방 모달 */
+.proof-card-modal {
+  max-width: 380px;
+}
+.proof-body {
+  align-items: center;
+}
+.proof-canvas-container {
+  width: 100%;
+  max-width: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+.proof-canvas-container canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.proof-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.download-btn {
+  background: #3B82F6;
+  color: #FFF;
+}
+.share-btn {
+  background: linear-gradient(135deg, #EC4899, #8B5CF6);
+  color: #FFF;
+}
+
+/* 모바일 전용 반응형 튜닝 */
+@media (max-width: 600px) {
+  .whiteboard, .window-view {
+    display: none; /* 모바일에서는 깔끔하게 숨김 */
+  }
+  .game-hud {
+    padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 2px 10px;
+  }
+  .hud-left {
+    gap: 4px;
+  }
+  .brand-title {
+    font-size: 15px;
+  }
+  .stat-pill {
+    padding: 2px 5px;
+    font-size: 9.5px;
+    height: 16px;
+  }
+  .hud-center {
+    gap: 2px;
+  }
+  .hud-center-metrics {
+    gap: 4px;
+  }
+  .hud-reason-badge {
+    padding: 2px 6px;
+    font-size: 10px;
+    max-width: 105px;
+  }
+  .fever-gauge-box {
+    width: 76px;
+    height: 16px;
+  }
+  .fever-text {
+    font-size: 8px;
+  }
+  .combo-number {
+    font-size: 14px;
+  }
+  .hud-right {
+    gap: 4px;
+  }
+  .hud-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 5px;
+    font-size: 12px;
+  }
+  .stress-btn {
+    padding: 0 6px;
+  }
+  .stress-badge-num {
+    font-size: 10.5px;
+  }
+  .weapon-deck {
+    gap: 8px;
+    padding: 10px 10px 6px 10px;
+  }
+  .weapon-card {
+    width: 62px;
+    height: 76px;
+  }
+  .w-icon {
+    font-size: 22px;
+  }
+  .w-name {
+    font-size: 9.5px;
+  }
+  .action-hint {
+    font-size: 9.5px;
+    padding: 4px 8px;
+  }
+  .fever-title {
+    font-size: 24px;
+  }
+}
